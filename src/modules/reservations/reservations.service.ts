@@ -8,10 +8,14 @@ import { DataSource } from 'typeorm';
 import { CreateReservationDto } from './dto/create-reservation.dto';
 import { ReservationEntity, ReservationStatus } from './reservation.entity';
 import { ProgramEntity } from '../programs/programs.entity';
+import { FxService } from '../fx/fx.service';
 
 @Injectable()
 export class ReservationsService {
-  constructor(private readonly dataSource: DataSource) {}
+  constructor(
+    private readonly dataSource: DataSource,
+    private readonly fxService: FxService,
+  ) {}
 
   async createReservation(programId: string, dto: CreateReservationDto) {
     return this.dataSource.transaction(async (manager) => {
@@ -32,8 +36,11 @@ export class ReservationsService {
         throw new NotFoundException('Program not found');
       }
 
-      // @TODO Handle currencies
-      let amountToReserve = dto.amount;
+      const amountToReserve = await this.fxService.convert(
+        dto.amount,
+        dto.currency,
+        program.currency,
+      );
 
       const activeSum = await manager.sum(
         ReservationEntity,
