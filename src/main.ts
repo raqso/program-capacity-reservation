@@ -1,6 +1,7 @@
 import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 
 import { AppModule } from './app.module';
 
@@ -23,6 +24,17 @@ async function bootstrap() {
     }),
   );
 
+  if (configService.get('NODE_ENV') !== 'production') {
+    const config = new DocumentBuilder()
+      .setTitle('Program Capacity & Invoice Reservation')
+      .addApiKey({ type: 'apiKey', name: 'X-API-KEY' }, 'api-key')
+      .addSecurityRequirements('api-key')
+      .build();
+    const documentFactory = () => SwaggerModule.createDocument(app, config);
+    SwaggerModule.setup('api', app, documentFactory);
+  }
+
   await app.listen(configService.get<number>('PORT') ?? 3000);
 }
+
 bootstrap();
