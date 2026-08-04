@@ -5,12 +5,14 @@ import { APP_GUARD } from '@nestjs/core';
 import { ApiKeyAuthGuard } from './common/guards/api-key-auth.guard';
 import { ProgramsModule } from './modules/programs/programs.module';
 import { ReservationsModule } from './modules/reservations/reservations.module';
+import { DatabaseModule } from './common/database/database.module';
 
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
     ProgramsModule,
     ReservationsModule,
+    DatabaseModule,
   ],
   controllers: [],
   providers: [
