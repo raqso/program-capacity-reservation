@@ -8,7 +8,6 @@ import {
 } from '@nestjs/common';
 import { ReservationsService } from './reservations.service';
 import { CreateReservationDto } from './dto/create-reservation.dto';
-import { ReleaseReservationDto } from './dto/release-reservation.dto';
 
 @Controller()
 export class ReservationsController {
@@ -25,13 +24,7 @@ export class ReservationsController {
 
   @Post('reservations/:reservationId/release')
   @HttpCode(HttpStatus.OK)
-  async releaseReservation(
-    @Param('reservationId') reservationId: string,
-    @Body() dto: ReleaseReservationDto,
-  ) {
-    return await this.reservationsService.releaseReservation(
-      reservationId,
-      dto,
-    );
+  async releaseReservation(@Param('reservationId') reservationId: string) {
+    return await this.reservationsService.releaseReservation(reservationId);
   }
 }

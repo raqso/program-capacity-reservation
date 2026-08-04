@@ -17,15 +17,6 @@ export class ProgramEntity extends BaseEntity {
   })
   totalCapacity: number;
 
-  @Column({
-    type: 'decimal',
-    precision: 15,
-    scale: 2,
-    default: 0.0,
-    transformer: numericTransformer,
-  })
-  reservedCapacity: number;
-
   @Column({ type: 'varchar', length: 3 })
   currency: string;
 }
