@@ -6,6 +6,7 @@ import { ApiKeyAuthGuard } from './common/guards/api-key-auth.guard';
 import { ProgramsModule } from './modules/programs/programs.module';
 import { ReservationsModule } from './modules/reservations/reservations.module';
 import { DatabaseModule } from './common/database/database.module';
+import { TreasuryModule } from './modules/treasury/treasury.module';
 
 @Module({
   imports: [
@@ -13,6 +14,7 @@ import { DatabaseModule } from './common/database/database.module';
     ProgramsModule,
     ReservationsModule,
     DatabaseModule,
+    TreasuryModule,
   ],
   controllers: [],
   providers: [

@@ -1,4 +1,3 @@
-import path from 'node:path';
 import { DataSource } from 'typeorm';
 import { config } from 'dotenv';
 
@@ -11,8 +10,8 @@ export const AppDataSource = new DataSource({
   username: process.env.POSTGRES_USER || 'postgres',
   password: process.env.POSTGRES_PASSWORD || 'postgres_password',
   database: process.env.POSTGRES_NAME || 'reservation_db',
-  entities: [path.join(__dirname, '**/*.entity{.ts,.js}')],
-  migrations: [path.join(__dirname, 'common/database/migrations/*{.ts,.js}')],
+  entities: ['src/**/*.entity{.ts,.js}'],
+  migrations: ['src/common/database/migrations/*{.ts,.js}'],
   synchronize: false,
   logging: true,
 });

@@ -2,6 +2,7 @@ import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import { MicroserviceOptions, Transport } from '@nestjs/microservices';
 
 import { AppModule } from './app.module';
 
@@ -34,6 +35,19 @@ async function bootstrap() {
     SwaggerModule.setup('api', app, documentFactory);
   }
 
+  app.connectMicroservice<MicroserviceOptions>({
+    transport: Transport.KAFKA,
+    options: {
+      client: {
+        brokers: [configService.get('KAFKA_BROKER') || 'localhost:19092'],
+      },
+      consumer: {
+        groupId: 'reservation-service-consumer',
+      },
+    },
+  });
+
+  await app.startAllMicroservices();
   await app.listen(configService.get<number>('PORT') ?? 3000);
 }
 

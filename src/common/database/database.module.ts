@@ -1,6 +1,8 @@
+import path from 'node:path';
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule, ConfigService } from '@nestjs/config';
+
 import { AppDataSource } from './data-source';
 
 @Module({
@@ -10,6 +12,10 @@ import { AppDataSource } from './data-source';
       imports: [ConfigModule],
       useFactory: (configService: ConfigService) => ({
         ...AppDataSource.options,
+        entities: [path.join(__dirname, '**/*.entity{.ts,.js}')],
+        migrations: [
+          path.join(__dirname, 'common/database/migrations/*{.ts,.js}'),
+        ],
         autoLoadEntities: true,
         migrationsRun: true,
       }),

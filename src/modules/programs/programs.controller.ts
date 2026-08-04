@@ -20,6 +20,6 @@ export class ProgramsController {
     @Param('programId') programId: string,
     @Query() query: GetCapacityQueryDto,
   ) {
-    return await this.programsService.getCapacity(programId, query.currency);
+    return this.programsService.getCapacity(programId, query.currency);
   }
 }
