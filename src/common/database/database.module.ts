@@ -1,7 +1,7 @@
 import path from 'node:path';
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { ConfigModule, ConfigService } from '@nestjs/config';
+import { ConfigModule } from '@nestjs/config';
 
 import { AppDataSource } from './data-source';
 
@@ -10,7 +10,7 @@ import { AppDataSource } from './data-source';
     ConfigModule.forRoot(),
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
-      useFactory: (configService: ConfigService) => ({
+      useFactory: () => ({
         ...AppDataSource.options,
         entities: [path.join(__dirname, '**/*.entity{.ts,.js}')],
         migrations: [
@@ -19,7 +19,6 @@ import { AppDataSource } from './data-source';
         autoLoadEntities: true,
         migrationsRun: true,
       }),
-      inject: [ConfigService],
     }),
   ],
 })

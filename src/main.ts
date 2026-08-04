@@ -3,10 +3,14 @@ import { ValidationPipe } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { MicroserviceOptions, Transport } from '@nestjs/microservices';
+import SnappyCodec from 'kafkajs-snappy';
 
 import { AppModule } from './app.module';
+import { CompressionCodecs, CompressionTypes } from 'kafkajs';
 
 const GLOBAL_API_PREFIX = 'api/v1';
+
+CompressionCodecs[CompressionTypes.Snappy] = SnappyCodec;
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);

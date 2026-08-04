@@ -10,5 +10,6 @@ import { FxModule } from '../fx/fx.module';
   imports: [TypeOrmModule.forFeature([ReservationEntity]), FxModule],
   controllers: [ReservationsController],
   providers: [ReservationsService],
+  exports: [ReservationsService],
 })
 export class ReservationsModule {}

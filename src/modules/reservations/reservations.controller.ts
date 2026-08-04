@@ -22,9 +22,9 @@ export class ReservationsController {
     return await this.reservationsService.createReservation(programId, dto);
   }
 
-  @Post('reservations/:reservationId/release')
+  @Post('reservations/:invoiceId/release')
   @HttpCode(HttpStatus.OK)
-  async releaseReservation(@Param('reservationId') reservationId: string) {
-    return await this.reservationsService.releaseReservation(reservationId);
+  async releaseReservation(@Param('invoiceId') invoiceId: string) {
+    return await this.reservationsService.releaseReservation(invoiceId);
   }
 }

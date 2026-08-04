@@ -1,14 +1,7 @@
 import { Injectable, BadRequestException } from '@nestjs/common';
 
-const AVAILABLE_CURRENCIES = [
-  'USD',
-  'EUR',
-  'GBP',
-  'PLN',
-  'CHF',
-  'CAD',
-] as const;
-type Currency = (typeof AVAILABLE_CURRENCIES)[number];
+type AVAILABLE_CURRENCIES = ['USD', 'EUR', 'GBP', 'PLN', 'CHF', 'CAD'];
+type Currency = AVAILABLE_CURRENCIES[number];
 
 @Injectable()
 export class FxService {
@@ -21,11 +14,7 @@ export class FxService {
     CAD: 1.36,
   };
 
-  async convert(
-    amount: number,
-    fromCurrency: string,
-    toCurrency: string,
-  ): Promise<number> {
+  async convert(amount: number, fromCurrency: string, toCurrency: string) {
     const from = fromCurrency.toUpperCase() as Currency;
     const to = toCurrency.toUpperCase() as Currency;
 

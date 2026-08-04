@@ -68,10 +68,10 @@ export class ReservationsService {
     });
   }
 
-  async releaseReservation(reservationId: string) {
+  async releaseReservation(invoiceId: string) {
     return this.dataSource.transaction(async (manager) => {
       const reservation = await manager.findOne(ReservationEntity, {
-        where: { id: reservationId },
+        where: { invoiceId },
       });
 
       if (!reservation) {
@@ -85,6 +85,81 @@ export class ReservationsService {
       reservation.status = ReservationStatus.RELEASED;
 
       return manager.save(ReservationEntity, reservation);
+    });
+  }
+
+  async reconcileProgram(
+    programId: string,
+    expectedActiveInvoices: Array<{
+      invoiceId: string;
+      amount: number;
+      currency: string;
+    }>,
+    newTotalCapacity?: number,
+  ) {
+    return this.dataSource.transaction(async (manager) => {
+      const program = await manager.findOneOrFail(ProgramEntity, {
+        where: { id: programId },
+      });
+
+      if (newTotalCapacity !== undefined) {
+        await manager.update(
+          ProgramEntity,
+          { id: programId },
+          { totalCapacity: newTotalCapacity },
+        );
+      }
+
+      const localActiveReservations = await manager.find(ReservationEntity, {
+        where: {
+          programId,
+          status: ReservationStatus.ACTIVE,
+        },
+      });
+
+      const expectedInvoiceIds = new Set(
+        expectedActiveInvoices.map((activeInvoice) => activeInvoice.invoiceId),
+      );
+      const localActiveMap = new Map(
+        localActiveReservations.map((reservation) => [
+          reservation.invoiceId,
+          reservation,
+        ]),
+      );
+
+      for (const localReservation of localActiveReservations) {
+        if (!expectedInvoiceIds.has(localReservation.invoiceId)) {
+          localReservation.status = ReservationStatus.RELEASED;
+          await manager.save(ReservationEntity, localReservation);
+        }
+      }
+
+      for (const expectedInvoice of expectedActiveInvoices) {
+        if (!localActiveMap.has(expectedInvoice.invoiceId)) {
+          const existingReservation = await manager.findOne(ReservationEntity, {
+            where: { invoiceId: expectedInvoice.invoiceId },
+          });
+
+          if (!existingReservation) {
+            const amountToReserve = await this.fxService.convert(
+              expectedInvoice.amount,
+              expectedInvoice.currency,
+              program.currency,
+            );
+
+            const newReservation = manager.create(ReservationEntity, {
+              programId,
+              invoiceId: expectedInvoice.invoiceId,
+              originalAmount: expectedInvoice.amount,
+              originalCurrency: expectedInvoice.currency,
+              reservedAmountInProgramCurrency: amountToReserve,
+              status: ReservationStatus.ACTIVE,
+            });
+
+            await manager.save(ReservationEntity, newReservation);
+          }
+        }
+      }
     });
   }
 }

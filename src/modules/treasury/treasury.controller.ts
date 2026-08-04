@@ -11,10 +11,13 @@ import { Repository } from 'typeorm';
 import { TreasuryKafkaTopics } from './events';
 import type {
   CapacityUpdatedPayload,
+  InvoiceReleasedPayload,
+  InvoiceReservedPayload,
   ReconciliationRequestedPayload,
 } from './events';
 import { ProcessedEventEntity } from './processed-events.entity';
 import { ProgramsService } from '../programs/programs.service';
+import { ReservationsService } from '../reservations/reservations.service';
 
 @Controller()
 export class TreasuryController {
@@ -22,6 +25,7 @@ export class TreasuryController {
     @InjectRepository(ProcessedEventEntity)
     private readonly processedEventsRepository: Repository<ProcessedEventEntity>,
     private readonly programsService: ProgramsService,
+    private readonly reservationsService: ReservationsService,
   ) {}
 
   @EventPattern(TreasuryKafkaTopics.CAPACITY_UPDATED)
@@ -29,12 +33,8 @@ export class TreasuryController {
     @Payload() message: CapacityUpdatedPayload,
     @Ctx() context: KafkaContext,
   ): Promise<void> {
-    const messageId = this.getMessageId(context);
-
-    const isNew = await this.markProcessed(messageId);
+    const isNew = await this.markProcessed(context);
     if (!isNew) {
-      console.log(`[${messageId}] Duplicate delivery, skipping`);
-
       return;
     }
 
@@ -42,10 +42,38 @@ export class TreasuryController {
       message.programId,
       message.totalCapacity,
     );
-    console.log(
-      `[${messageId}] Processed capacity update for ${message.programId}`,
-      `New total capacity: ${message.totalCapacity} ${message.currency}`,
-    );
+  }
+
+  @EventPattern(TreasuryKafkaTopics.INVOICE_RESERVED)
+  async handleInvoiceReserved(
+    @Payload() message: InvoiceReservedPayload,
+    @Ctx() context: KafkaContext,
+  ) {
+    const isNew = await this.markProcessed(context);
+    if (!isNew) {
+      return;
+    }
+
+    const { programId, amount, currency, invoiceId } = message;
+
+    return this.reservationsService.createReservation(programId, {
+      invoiceId,
+      amount,
+      currency,
+    });
+  }
+
+  @EventPattern(TreasuryKafkaTopics.INVOICE_RELEASED)
+  async handleInvoiceReleased(
+    @Payload() message: InvoiceReleasedPayload,
+    @Ctx() context: KafkaContext,
+  ) {
+    const isNew = await this.markProcessed(context);
+    if (!isNew) {
+      return;
+    }
+
+    return this.reservationsService.releaseReservation(message.invoiceId);
   }
 
   @EventPattern(TreasuryKafkaTopics.RECONCILIATION_REQUESTED)
@@ -53,20 +81,20 @@ export class TreasuryController {
     @Payload() message: ReconciliationRequestedPayload,
     @Ctx() context: KafkaContext,
   ): Promise<void> {
-    const messageId = this.getMessageId(context);
-
-    const isNew = await this.markProcessed(messageId);
+    const isNew = await this.markProcessed(context);
     if (!isNew) {
-      console.log(`[${messageId}] Duplicate delivery, skipping`);
       return;
     }
 
-    console.log(`[${messageId}] Reconciling program ${message.programId}`);
-
-    // TODO:
+    await this.reservationsService.reconcileProgram(
+      message.programId,
+      message.activeInvoices,
+      message.totalCapacity,
+    );
   }
 
-  private async markProcessed(messageId: string): Promise<boolean> {
+  private async markProcessed(context: KafkaContext): Promise<boolean> {
+    const messageId = this.getMessageId(context);
     const result = await this.processedEventsRepository
       .createQueryBuilder()
       .insert()

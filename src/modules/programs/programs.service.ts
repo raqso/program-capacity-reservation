@@ -35,7 +35,7 @@ export class ProgramsService {
     );
 
     const reservedCapacity = activeSum ?? 0;
-    let availableCapacity = Math.max(
+    const availableCapacity = Math.max(
       0,
       program.totalCapacity - reservedCapacity,
     );
