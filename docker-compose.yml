@@ -1,0 +1,67 @@
+name: reservation-app
+
+services:
+  database:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-reservation_db}
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-db_password}
+    ports:
+      - "${DB_PORT:-5433}:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-reservation_db}",
+        ]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  # Redpanda: a Kafka-API-compatible broker, named "kafka" here so app-level
+  # config (KAFKA_BROKERS, client hostnames, etc.) stays protocol-oriented.
+  kafka:
+    image: docker.redpanda.com/redpandadata/redpanda:v26.1.14
+    command:
+      - redpanda
+      - start
+      - --mode dev-container
+      - --smp 1
+      - --memory 1G
+      - --node-id 0
+      - --kafka-addr internal://0.0.0.0:9092,external://0.0.0.0:19092
+      - --advertise-kafka-addr internal://kafka:9092,external://localhost:19092
+    ports:
+      - "19092:19092"
+      - "9644:9644" # Admin API
+    volumes:
+      - kafka_data:/var/lib/redpanda/data
+    healthcheck:
+      test:
+        ["CMD-SHELL", "rpk cluster health | grep -E 'Healthy:.+true' || exit 1"]
+      interval: 15s
+      timeout: 3s
+      retries: 5
+      start_period: 5s
+
+  kafka-console:
+    image: docker.redpanda.com/redpandadata/console:v3.8.0
+    entrypoint: /bin/sh -c "echo \"$$CONSOLE_CONFIG_FILE\" > /tmp/config.yml; /app/console"
+    environment:
+      CONFIG_FILEPATH: /tmp/config.yml
+      CONSOLE_CONFIG_FILE: |
+        kafka:
+          brokers: ["kafka:9092"]
+    ports:
+      - "8080:8080"
+    depends_on:
+      kafka:
+        condition: service_healthy
+
+volumes:
+  pgdata:
+  kafka_data:
