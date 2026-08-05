@@ -1,5 +1,7 @@
 import { Injectable, BadRequestException } from '@nestjs/common';
 
+import { roundToTwoDecimalPlaces } from '../../common/utils/money';
+
 type AVAILABLE_CURRENCIES = ['USD', 'EUR', 'GBP', 'PLN', 'CHF', 'CAD'];
 type Currency = AVAILABLE_CURRENCIES[number];
 
@@ -36,6 +38,6 @@ export class FxService {
     const amountInUsd = amount / fromRate;
     const convertedAmount = amountInUsd * toRate;
 
-    return Math.round(convertedAmount * 100) / 100;
+    return roundToTwoDecimalPlaces(convertedAmount);
   }
 }

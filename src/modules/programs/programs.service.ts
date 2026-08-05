@@ -7,6 +7,7 @@ import {
   ReservationEntity,
   ReservationStatus,
 } from '../reservations/reservation.entity';
+import { roundToTwoDecimalPlaces } from '../../common/utils/money';
 
 @Injectable()
 export class ProgramsService {
@@ -34,10 +35,9 @@ export class ProgramsService {
       },
     );
 
-    const reservedCapacity = activeSum ?? 0;
-    const availableCapacity = Math.max(
-      0,
-      program.totalCapacity - reservedCapacity,
+    const reservedCapacity = roundToTwoDecimalPlaces(activeSum ?? 0);
+    const availableCapacity = roundToTwoDecimalPlaces(
+      Math.max(0, program.totalCapacity - reservedCapacity),
     );
 
     return {
